@@ -23,6 +23,7 @@
         <div class="hero-actions">
             <a href="{{ url_for('register') }}" class="btn-primary">Start tracking free</a>
             <a href="{{ url_for('login') }}" class="btn-ghost">Sign in</a>
+            <a href="javascript:void(0)" id="open-modal" class="btn-ghost">See how it works</a>
         </div>
     </div>
     <div class="hero-visual">
@@ -92,5 +93,47 @@
         <a href="{{ url_for('register') }}" class="btn-primary">Create free account</a>
     </div>
 </section>
+
+<div id="video-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+    <div class="modal-content" style="position: relative; width: 90%; max-width: 800px; background: #000; border-radius: var(--radius-md); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+        <button id="close-modal" style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.2); color: white; border: none; font-size: 20px; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; z-index: 10; transition: background 0.2s;">&times;</button>
+        <div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0;">
+            <iframe id="modal-video" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const modal = document.getElementById('video-modal');
+    const openBtn = document.getElementById('open-modal');
+    const closeBtn = document.getElementById('close-modal');
+    const video = document.getElementById('modal-video');
+    const videoUrl = "https://www.youtube.com/embed/dQw4w9WgXcQ"; // Placeholder
+
+    const openModal = () => {
+        video.src = videoUrl;
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    };
+
+    const closeModal = () => {
+        video.src = "";
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    };
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeModal();
+    });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+})();
+</script>
+
 
 {% endblock %}
