@@ -40,7 +40,20 @@ def init_db():
         """)
         conn.commit()
 
+def create_user(name, email, password):
+    """
+    Creates a new user in the database with a hashed password.
+    """
+    password_hash = generate_password_hash(password)
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+            (name, email, password_hash)
+        )
+        conn.commit()
+
 def seed_db():
+
     """
     Inserts sample data into the database for development purposes.
     Prevents duplicate seeding if users already exist.
