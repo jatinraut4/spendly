@@ -1,5 +1,5 @@
 import sqlite3
-import os
+from werkzeug.security import generate_password_hash
 
 DATABASE_PATH = 'spendly.db'
 
@@ -21,18 +21,19 @@ def init_db():
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
+                name TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS expenses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
-                amount NUMERIC NOT NULL,
+                amount REAL NOT NULL,
                 category TEXT NOT NULL,
-                description TEXT,
                 date TEXT NOT NULL,
+                description TEXT,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
             );
@@ -42,44 +43,40 @@ def init_db():
 def seed_db():
     """
     Inserts sample data into the database for development purposes.
+    Prevents duplicate seeding if users already exist.
     """
     with get_db() as conn:
-        # Seed users
-        users = [
-            ('testuser', 'hashed_password_123'),
-            ('admin', 'hashed_password_456'),
-            ('jane_doe', 'hashed_password_789')
-        ]
-        conn.executemany(
-            "INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)",
-            users
-        )
-
-        # Get user IDs to link expenses
-        user_ids = [row['id'] for row in conn.execute("SELECT id FROM users").fetchall()]
-
-        if not user_ids:
+        # Check if users table already contains data
+        if conn.execute("SELECT 1 FROM users LIMIT 1").fetchone():
             return
 
-        # Seed expenses for the first user
-        primary_user_id = user_ids[0]
+        # Seed demo user
+        demo_user = (
+            "Demo User",
+            "demo@spendly.com",
+            generate_password_hash("demo123")
+        )
+        cursor = conn.execute(
+            "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+            demo_user
+        )
+        user_id = cursor.lastrowid
+
+        # Seed 8 sample expenses across all required categories
+        # Categories: Food, Transport, Bills, Health, Entertainment, Shopping, Other
         expenses = [
-            (primary_user_id, 50.00, 'Food', 'Grocery shopping', '2023-10-01'),
-            (primary_user_id, 120.00, 'Transport', 'Fuel', '2023-10-02'),
-            (primary_user_id, 15.00, 'Entertainment', 'Movie ticket', '2023-10-03'),
-            (primary_user_id, 200.00, 'Utilities', 'Electricity bill', '2023-10-04'),
+            (user_id, 15.50, 'Food', 'Lunch at Deli', '2023-10-01'),
+            (user_id, 42.00, 'Transport', 'Gas Refill', '2023-10-02'),
+            (user_id, 120.00, 'Bills', 'Electric Bill', '2023-10-03'),
+            (user_id, 25.00, 'Health', 'Pharmacy', '2023-10-04'),
+            (user_id, 12.00, 'Entertainment', 'Streaming Sub', '2023-10-05'),
+            (user_id, 85.00, 'Shopping', 'New Shoes', '2023-10-06'),
+            (user_id, 10.00, 'Other', 'Parking Fee', '2023-10-07'),
+            (user_id, 22.00, 'Food', 'Dinner Out', '2023-10-08'),
         ]
 
-        # Seed expenses for the second user
-        if len(user_ids) > 1:
-            secondary_user_id = user_ids[1]
-            expenses.extend([
-                (secondary_user_id, 10.00, 'Food', 'Coffee', '2023-10-01'),
-                (secondary_user_id, 60.00, 'Shopping', 'New book', '2023-10-02'),
-            ])
-
         conn.executemany(
-            "INSERT INTO expenses (user_id, amount, category, description, date) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
             expenses
         )
         conn.commit()
