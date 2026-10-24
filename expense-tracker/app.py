@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session
-from database.db import init_db, seed_db, create_user
+from database.db import init_db, seed_db, create_user, verify_user, get_user_by_id
 import sqlite3
+from datetime import datetime
 
 app = Flask(__name__)
+app.secret_key = "dev-secret-key-change-in-production"
 
 
 # ------------------------------------------------------------------ #
@@ -39,10 +41,25 @@ def register():
     return render_template("register.html")
 
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
     if session.get("user_id"):
         return redirect(url_for("profile"))
+
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        if not email or not password:
+            return render_template("login.html", error="Email and password are required")
+
+        user = verify_user(email, password)
+        if user:
+            session["user_id"] = user["id"]
+            return redirect(url_for("profile"))
+        else:
+            return render_template("login.html", error="Invalid email or password")
+
     return render_template("login.html")
 
 
@@ -62,7 +79,8 @@ def privacy():
 
 @app.route("/logout")
 def logout():
-    return "Logout — coming in Step 3"
+    session.clear()
+    return redirect(url_for("login"))
 
 
 @app.route("/profile")
@@ -70,13 +88,31 @@ def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
-    # Hardcoded data for Step 4 design validation
+    # Fetch actual user data from database
+    user_data = get_user_by_id(session["user_id"])
+    if not user_data:
+        session.clear()
+        return redirect(url_for("login"))
+
+    # Extract initials from name
+    name_parts = user_data["name"].split()
+    initials = "".join([part[0].upper() for part in name_parts if part])
+
+    # Format joined date
+    try:
+        created_at = datetime.strptime(user_data["created_at"], "%Y-%m-%d %H:%M:%S")
+        joined_date = created_at.strftime("%B %Y")
+    except:
+        joined_date = "Recently"
+
     user = {
-        "name": "Jatin Raut",
-        "email": "jatin@example.com",
-        "initials": "JR",
-        "joined_date": "October 2023"
+        "name": user_data["name"],
+        "email": user_data["email"],
+        "initials": initials,
+        "joined_date": joined_date
     }
+
+    # Still using dummy data for stats, transactions, and categories
     stats = {
         "total_spent": "12,450",
         "count": 42,
