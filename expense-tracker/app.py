@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 from database.db import init_db, seed_db, create_user
 import sqlite3
 
@@ -41,6 +41,8 @@ def register():
 
 @app.route("/login")
 def login():
+    if session.get("user_id"):
+        return redirect(url_for("profile"))
     return render_template("login.html")
 
 
@@ -65,7 +67,35 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    # Hardcoded data for Step 4 design validation
+    user = {
+        "name": "Jatin Raut",
+        "email": "jatin@example.com",
+        "initials": "JR",
+        "joined_date": "October 2023"
+    }
+    stats = {
+        "total_spent": "12,450",
+        "count": 42,
+        "top_category": "Food & Dining"
+    }
+    transactions = [
+        {"date": "2023-10-20", "description": "Starbucks Coffee", "category": "Food", "category_class": "food", "amount": "350"},
+        {"date": "2023-10-19", "description": "Uber Ride", "category": "Transport", "category_class": "transport", "amount": "120"},
+        {"date": "2023-10-18", "description": "Netflix Subscription", "category": "Entertainment", "category_class": "entertainment", "amount": "499"},
+        {"date": "2023-10-17", "description": "Grocery Store", "category": "Shopping", "category_class": "shopping", "amount": "2,100"},
+    ]
+    categories = [
+        {"name": "Food & Dining", "amount": "5,200", "percentage": 42},
+        {"name": "Transport", "amount": "3,100", "percentage": 25},
+        {"name": "Shopping", "amount": "2,450", "percentage": 20},
+        {"name": "Others", "amount": "1,700", "percentage": 13},
+    ]
+
+    return render_template("profile.html", user=user, stats=stats, transactions=transactions, categories=categories)
 
 
 @app.route("/expenses/add")
