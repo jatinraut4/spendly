@@ -9,19 +9,34 @@ def format_amount(amount):
     return f"{amount:,.2f}"
 
 
-def get_summary_stats(user_id):
+def get_summary_stats(user_id, date_from=None, date_to=None):
     """
     Calculate summary statistics for a user's expenses.
-    Returns dict with total_spent, transaction_count, top_category.
+    Optionally filtered by date range.
+
+    Args:
+        user_id: The user's ID
+        date_from: Optional start date (YYYY-MM-DD string, inclusive)
+        date_to: Optional end date (YYYY-MM-DD string, inclusive)
+
+    Returns dict with total_spent, count, top_category.
 
     Edge case: If user has no expenses, returns:
-    {"total_spent": "0.00", "transaction_count": 0, "top_category": "—"}
+    {"total_spent": "0.00", "count": 0, "top_category": "—"}
     """
     with get_db() as conn:
+        # Build WHERE clause conditionally
+        where_clause = "WHERE user_id = ?"
+        params = [user_id]
+
+        if date_from and date_to:
+            where_clause += " AND date BETWEEN ? AND ?"
+            params.extend([date_from, date_to])
+
         # Get total and count
         row = conn.execute(
-            "SELECT COALESCE(SUM(amount), 0) as total, COUNT(*) as count FROM expenses WHERE user_id = ?",
-            (user_id,)
+            "SELECT COALESCE(SUM(amount), 0) as total, COUNT(*) as count FROM expenses " + where_clause,
+            params
         ).fetchone()
 
         total_spent = row["total"]
@@ -30,8 +45,8 @@ def get_summary_stats(user_id):
         # Get top category
         if count > 0:
             top_row = conn.execute(
-                "SELECT category FROM expenses WHERE user_id = ? GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
-                (user_id,)
+                "SELECT category FROM expenses " + where_clause + " GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
+                params
             ).fetchone()
             top_category = top_row["category"]
         else:
@@ -44,22 +59,33 @@ def get_summary_stats(user_id):
         }
 
 
-def get_category_breakdown(user_id):
+def get_category_breakdown(user_id, date_from=None, date_to=None):
     """
     Calculate per-category spending breakdown with percentages.
-    Returns list of dicts with name, amount, pct (percentage as integer).
+    Optionally filtered by date range.
+
+    Args:
+        user_id: The user's ID
+        date_from: Optional start date (YYYY-MM-DD string, inclusive)
+        date_to: Optional end date (YYYY-MM-DD string, inclusive)
+
+    Returns list of dicts with name, amount, percentage (percentage as integer).
     Percentages are adjusted to sum to exactly 100.
     """
     with get_db() as conn:
+        # Build WHERE clause conditionally
+        where_clause = "WHERE user_id = ?"
+        params = [user_id]
+
+        if date_from and date_to:
+            where_clause += " AND date BETWEEN ? AND ?"
+            params.extend([date_from, date_to])
+
         rows = conn.execute(
-            """
-            SELECT category, SUM(amount) as total
-            FROM expenses
-            WHERE user_id = ?
-            GROUP BY category
-            ORDER BY total DESC
-            """,
-            (user_id,)
+            "SELECT category, SUM(amount) as total FROM expenses "
+            + where_clause
+            + " GROUP BY category ORDER BY total DESC",
+            params
         ).fetchall()
 
         if not rows:
@@ -85,13 +111,16 @@ def get_category_breakdown(user_id):
 
         return categories
 
-def get_recent_transactions(user_id, limit=10):
+def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     """
     Fetch recent transactions for a user, ordered newest-first.
+    Optionally filtered by date range.
 
     Args:
         user_id: The ID of the user whose transactions to fetch
         limit: Maximum number of transactions to return (default 10)
+        date_from: Optional start date (YYYY-MM-DD string, inclusive)
+        date_to: Optional end date (YYYY-MM-DD string, inclusive)
 
     Returns:
         List of dicts, each containing:
@@ -104,9 +133,19 @@ def get_recent_transactions(user_id, limit=10):
         Returns empty list if no expenses exist.
     """
     with get_db() as conn:
+        # Build WHERE clause conditionally
+        where_clause = "WHERE user_id = ?"
+        params = [user_id]
+
+        if date_from and date_to:
+            where_clause += " AND date BETWEEN ? AND ?"
+            params.extend([date_from, date_to])
+
+        params.append(limit)
+
         rows = conn.execute(
-            "SELECT date, description, category, amount FROM expenses WHERE user_id = ? ORDER BY date DESC LIMIT ?",
-            (user_id, limit)
+            "SELECT date, description, category, amount FROM expenses " + where_clause + " ORDER BY date DESC LIMIT ?",
+            params
         ).fetchall()
 
         return [
