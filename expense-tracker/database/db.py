@@ -1,5 +1,5 @@
 import sqlite3
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 DATABASE_PATH = 'spendly.db'
 
@@ -51,6 +51,33 @@ def create_user(name, email, password):
             (name, email, password_hash)
         )
         conn.commit()
+
+def verify_user(email, password):
+    """
+    Verifies user credentials and returns the user record if valid.
+    Returns None if credentials are invalid.
+    """
+    with get_db() as conn:
+        user = conn.execute(
+            "SELECT id, name, email, password_hash FROM users WHERE email = ?",
+            (email,)
+        ).fetchone()
+
+        if user and check_password_hash(user['password_hash'], password):
+            return dict(user)
+        return None
+
+def get_user_by_id(user_id):
+    """
+    Fetches a user by their ID.
+    Returns the user record as a dict or None if not found.
+    """
+    with get_db() as conn:
+        user = conn.execute(
+            "SELECT id, name, email, created_at FROM users WHERE id = ?",
+            (user_id,)
+        ).fetchone()
+        return dict(user) if user else None
 
 def seed_db():
 
