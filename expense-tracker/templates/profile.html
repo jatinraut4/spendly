@@ -27,6 +27,58 @@
             <a href="{{ url_for('logout') }}" class="logout-btn">Sign out</a>
         </header>
 
+        <!-- Date Filter Bar -->
+        <section class="filter-bar">
+            <div class="filter-presets">
+                <a href="{{ preset_urls.this_month }}"
+                   class="preset-btn {% if active_preset == 'this_month' %}active{% endif %}">
+                    This Month
+                </a>
+                <a href="{{ preset_urls.last_3_months }}"
+                   class="preset-btn {% if active_preset == 'last_3_months' %}active{% endif %}">
+                    Last 3 Months
+                </a>
+                <a href="{{ preset_urls.last_6_months }}"
+                   class="preset-btn {% if active_preset == 'last_6_months' %}active{% endif %}">
+                    Last 6 Months
+                </a>
+                <a href="{{ preset_urls.all_time }}"
+                   class="preset-btn {% if active_preset == 'all_time' %}active{% endif %}">
+                    All Time
+                </a>
+            </div>
+
+            <form method="GET" action="{{ url_for('profile') }}" class="filter-custom">
+                <label for="date_from" class="visually-hidden">From Date</label>
+                <input type="date"
+                       id="date_from"
+                       name="date_from"
+                       value="{{ date_from or '' }}"
+                       class="date-input">
+
+                <span class="filter-separator">to</span>
+
+                <label for="date_to" class="visually-hidden">To Date</label>
+                <input type="date"
+                       id="date_to"
+                       name="date_to"
+                       value="{{ date_to or '' }}"
+                       class="date-input">
+
+                <button type="submit" class="filter-submit-btn">Apply</button>
+            </form>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
         <!-- Summary Stats -->
         <section class="stats-grid">
             <div class="stat-card">

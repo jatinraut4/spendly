@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from database.db import init_db, seed_db, create_user, verify_user, get_user_by_id
 from database.queries import get_summary_stats, get_recent_transactions, get_category_breakdown
 import sqlite3
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-change-in-production"
@@ -113,13 +114,85 @@ def profile():
         "joined_date": joined_date
     }
 
-    # Fetch real data from database
-    user_id = session["user_id"]
-    stats = get_summary_stats(user_id)
-    transactions = get_recent_transactions(user_id, limit=10)
-    categories = get_category_breakdown(user_id)
+    # ========== Date Filter Logic ==========
+    # Parse query parameters
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
 
-    return render_template("profile.html", user=user, stats=stats, transactions=transactions, categories=categories)
+    # Validate dates (try-except with silent fallback)
+    parsed_from = None
+    parsed_to = None
+
+    if date_from:
+        try:
+            parsed_from = datetime.strptime(date_from, "%Y-%m-%d").date()
+        except ValueError:
+            date_from = None
+
+    if date_to:
+        try:
+            parsed_to = datetime.strptime(date_to, "%Y-%m-%d").date()
+        except ValueError:
+            date_to = None
+
+    # Check if date_from > date_to (reversed range)
+    if parsed_from and parsed_to and parsed_from > parsed_to:
+        flash("Start date must be before end date.", "error")
+        date_from = None
+        date_to = None
+        parsed_from = None
+        parsed_to = None
+
+    # Calculate preset URLs
+    today = datetime.now().date()
+    first_of_month = today.replace(day=1)
+    three_months_ago = today - relativedelta(months=3)
+    six_months_ago = today - relativedelta(months=6)
+
+    preset_urls = {
+        "this_month": url_for('profile',
+                              date_from=first_of_month.strftime('%Y-%m-%d'),
+                              date_to=today.strftime('%Y-%m-%d')),
+        "last_3_months": url_for('profile',
+                                  date_from=three_months_ago.strftime('%Y-%m-%d'),
+                                  date_to=today.strftime('%Y-%m-%d')),
+        "last_6_months": url_for('profile',
+                                  date_from=six_months_ago.strftime('%Y-%m-%d'),
+                                  date_to=today.strftime('%Y-%m-%d')),
+        "all_time": url_for('profile')
+    }
+
+    # Determine active preset (for UI highlighting)
+    active_preset = None
+    if parsed_from and parsed_to:
+        if parsed_from == first_of_month and parsed_to == today:
+            active_preset = "this_month"
+        elif parsed_from == three_months_ago and parsed_to == today:
+            active_preset = "last_3_months"
+        elif parsed_from == six_months_ago and parsed_to == today:
+            active_preset = "last_6_months"
+        else:
+            active_preset = "custom"
+    elif not parsed_from and not parsed_to:
+        active_preset = "all_time"
+
+    # Fetch filtered data from database
+    user_id = session["user_id"]
+    stats = get_summary_stats(user_id, date_from=date_from, date_to=date_to)
+    transactions = get_recent_transactions(user_id, limit=10, date_from=date_from, date_to=date_to)
+    categories = get_category_breakdown(user_id, date_from=date_from, date_to=date_to)
+
+    return render_template(
+        "profile.html",
+        user=user,
+        stats=stats,
+        transactions=transactions,
+        categories=categories,
+        date_from=date_from,
+        date_to=date_to,
+        active_preset=active_preset,
+        preset_urls=preset_urls
+    )
 
 
 @app.route("/expenses/add")
