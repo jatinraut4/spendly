@@ -131,6 +131,31 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
 
         return categories
 
+def get_expense_by_id(expense_id, user_id):
+    """
+    Fetch a single expense by ID and user_id (ownership check).
+    Returns dict or None if not found/unauthorized.
+    """
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, user_id, amount, category, date, description FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id)
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def update_expense(expense_id, user_id, amount, category, date, description):
+    """
+    Update an existing expense record scoped by id and user_id.
+    """
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? WHERE id = ? AND user_id = ?",
+            (amount, category, date, description, expense_id, user_id)
+        )
+        conn.commit()
+
+
 def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     """
     Fetch recent transactions for a user, ordered newest-first.
@@ -144,6 +169,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
 
     Returns:
         List of dicts, each containing:
+        - id: Expense ID
         - date: YYYY-MM-DD string
         - description: Transaction description
         - category: Expense category
@@ -164,12 +190,13 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
         params.append(limit)
 
         rows = conn.execute(
-            "SELECT date, description, category, amount FROM expenses " + where_clause + " ORDER BY date DESC LIMIT ?",
+            "SELECT id, date, description, category, amount FROM expenses " + where_clause + " ORDER BY date DESC LIMIT ?",
             params
         ).fetchall()
 
         return [
             {
+                "id": row["id"],
                 "date": row["date"],
                 "description": row["description"],
                 "category": row["category"],
