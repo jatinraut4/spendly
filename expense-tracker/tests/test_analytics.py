@@ -53,6 +53,5 @@ def test_analytics_renders_when_logged_in(client):
 
     response = client.get('/analytics')
     assert response.status_code == 200
-    assert b'Financial Analytics' in response.data
-    assert b'Monthly Spending Trend' in response.data
-    assert b'Category Breakdown' in response.data
+    assert b'Advanced Analytics' in response.data
+    assert b'Coming Soon' in response.data

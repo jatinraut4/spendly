@@ -1,4 +1,24 @@
 from database.db import get_db
+from datetime import datetime
+
+
+def insert_expense(user_id, amount, category, date, description):
+    """
+    Insert a new expense into the database.
+
+    Args:
+        user_id: The ID of the user
+        amount: Expense amount (float/numeric)
+        category: Expense category string
+        date: Date string (YYYY-MM-DD)
+        description: Optional description string or None
+    """
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, date, description)
+        )
+        conn.commit()
 
 
 def format_amount(amount):
