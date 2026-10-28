@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics — Spendly{% endblock %}
+
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: center; min-h-[500px]; padding: 3rem 2rem; position: relative; overflow: hidden; min-height: calc(100vh - 60px - 100px);">
+    <!-- Decorative Background Elements -->
+    <div style="position: absolute; top: 0; left: 0; width: 24rem; height: 24rem; background: var(--accent); opacity: 0.05; border-radius: 9999px; filter: blur(64px); transform: translate(-50%, -50%); pointer-events: none;"></div>
+    <div style="position: absolute; bottom: 0; right: 0; width: 24rem; height: 24rem; background: var(--accent); opacity: 0.05; border-radius: 9999px; filter: blur(64px); transform: translate(50%, 50%); pointer-events: none;"></div>
+
+    <div style="max-width: 32rem; width: 100%; text-align: center; background: var(--paper-card); border-radius: var(--radius-lg); box-shadow: 0 20px 50px rgba(0,0,0,0.08); padding: 2.5rem; position: relative; border: 1px solid var(--border);">
+        <!-- Decorative Corner Accents -->
+        <div style="position: absolute; top: 0; right: 0; width: 5rem; height: 5rem; background: linear-gradient(135deg, var(--accent), transparent); opacity: 0.1; border-bottom-left-radius: 100%;"></div>
+        <div style="position: absolute; bottom: 0; left: 0; width: 5rem; height: 5rem; background: linear-gradient(135deg, var(--accent), transparent); opacity: 0.1; border-top-right-radius: 100%;"></div>
+
+        <!-- Icon/Visual with Glow Effect -->
+        <div style="margin-bottom: 2rem; display: flex; justify-content: center; position: relative;">
+            <div style="position: absolute; width: 6rem; height: 6rem; background: var(--accent); opacity: 0.2; border-radius: 9999px; filter: blur(16px);"></div>
+            <div style="width: 6rem; height: 6rem; background: linear-gradient(135deg, var(--accent), #1a2d25); border-radius: var(--radius-md); display: flex; items-center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); position: relative; align-items: center; justify-content: center;">
+                <svg style="width: 3rem; height: 3rem; color: #ffffff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Badge with Gradient -->
+        <div style="display: inline-block; padding: 0.35rem 1.25rem; background: linear-gradient(90deg, var(--accent), #3d5a4e); border-radius: 9999px; margin-bottom: 1.25rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <span style="font-size: 0.75rem; font-weight: 600; color: #ffffff; text-transform: uppercase; letter-spacing: 0.08em;">Coming Soon</span>
+        </div>
+
+        <!-- Title with Gradient Text -->
+        <h2 style="font-family: var(--font-display); font-size: 2rem; color: var(--ink); margin-bottom: 1rem;">
+            Advanced Analytics
+        </h2>
+
+        <!-- Description -->
+        <p style="color: var(--ink-muted); line-height: 1.6; margin-bottom: 2rem; max-width: 22rem; margin-left: auto; margin-right: auto; font-size: 0.95rem;">
+            We're working on powerful insights and visualizations to help you understand your spending patterns better.
+        </p>
+
+        <!-- Estimated Date with Accent -->
+        <div style="background: linear-gradient(90deg, var(--paper), var(--paper-warm)); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.5rem; border: 1px solid var(--border);">
+            <div style="font-size: 0.75rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Expected Launch</div>
+            <div style="font-size: 1.1rem; font-weight: 600; color: var(--accent);">Q1 2026</div>
+        </div>
+
+        <!-- Progress Indicator with Animation -->
+        <div style="margin-top: 2rem;">
+            <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+                <div style="width: 0.75rem; height: 0.75rem; background: var(--accent); border-radius: 9999px;"></div>
+                <div style="width: 0.75rem; height: 0.75rem; background: var(--accent); border-radius: 9999px; opacity: 0.7;"></div>
+                <div style="width: 0.75rem; height: 0.75rem; background: var(--accent); border-radius: 9999px; opacity: 0.4;"></div>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--ink-faint); margin-top: 1rem; letter-spacing: 0.05em;">We're crafting something special</p>
+        </div>
+
+        <!-- Decorative Bottom Line -->
+        <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 8rem; height: 0.25rem; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.3; border-radius: 9999px;"></div>
+    </div>
+</div>
+{% endblock %}

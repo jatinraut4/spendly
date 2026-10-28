@@ -1,4 +1,24 @@
 from database.db import get_db
+from datetime import datetime
+
+
+def insert_expense(user_id, amount, category, date, description):
+    """
+    Insert a new expense into the database.
+
+    Args:
+        user_id: The ID of the user
+        amount: Expense amount (float/numeric)
+        category: Expense category string
+        date: Date string (YYYY-MM-DD)
+        description: Optional description string or None
+    """
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, date, description)
+        )
+        conn.commit()
 
 
 def format_amount(amount):
@@ -158,3 +178,43 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
             }
             for row in rows
         ]
+
+
+def get_monthly_spending_trend(user_id, date_from=None, date_to=None):
+    """
+    Fetch monthly spending aggregated by month (YYYY-MM), optionally filtered by date range.
+    Returns list of dicts with month (e.g. '2026-10', or formatted label like 'Oct 2026') and amount.
+    """
+    with get_db() as conn:
+        where_clause = "WHERE user_id = ?"
+        params = [user_id]
+
+        if date_from and date_to:
+            where_clause += " AND date BETWEEN ? AND ?"
+            params.extend([date_from, date_to])
+
+        query = f"""
+            SELECT strftime('%Y-%m', date) as month_key, SUM(amount) as total
+            FROM expenses
+            {where_clause}
+            GROUP BY month_key
+            ORDER BY month_key ASC
+        """
+        rows = conn.execute(query, params).fetchall()
+
+        result = []
+        for row in rows:
+            month_key = row["month_key"]
+            try:
+                dt = datetime.strptime(month_key, "%Y-%m")
+                label = dt.strftime("%b %Y")
+            except:
+                label = month_key
+
+            result.append({
+                "month": label,
+                "month_key": month_key,
+                "amount": format_amount(row["total"]),
+                "raw_amount": row["total"]
+            })
+        return result
