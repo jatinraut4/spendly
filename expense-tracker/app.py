@@ -1,6 +1,15 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, abort
 from database.db import init_db, seed_db, create_user, verify_user, get_user_by_id
-from database.queries import get_summary_stats, get_recent_transactions, get_category_breakdown, get_monthly_spending_trend, insert_expense
+from database.queries import (
+    get_summary_stats,
+    get_recent_transactions,
+    get_category_breakdown,
+    get_monthly_spending_trend,
+    insert_expense,
+    get_expense_by_id,
+    update_expense,
+    delete_expense
+)
 import sqlite3
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -379,14 +388,102 @@ def add_expense():
     )
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+    expense = get_expense_by_id(id, user_id)
+    if not expense:
+        abort(404)
+
+    categories = ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"]
+
+    if request.method == "POST":
+        amount_str = request.form.get("amount", "").strip()
+        category = request.form.get("category", "").strip()
+        date_str = request.form.get("date", "").strip()
+        description = request.form.get("description", "").strip()
+
+        error = None
+        amount = None
+
+        if not amount_str:
+            error = "Amount is required."
+        else:
+            try:
+                amount = float(amount_str)
+                if amount <= 0:
+                    error = "Amount must be a positive number greater than 0."
+            except ValueError:
+                error = "Amount must be a valid number."
+
+        if not error and not category:
+            error = "Category is required."
+        elif not error and category not in categories:
+            error = "Invalid category selected."
+
+        if not error and not date_str:
+            error = "Date is required."
+        elif not error:
+            try:
+                datetime.strptime(date_str, "%Y-%m-%d")
+            except ValueError:
+                error = "Invalid date format. Use YYYY-MM-DD."
+
+        if error:
+            return render_template(
+                "edit_expense.html",
+                expense=expense,
+                categories=categories,
+                error=error,
+                form_data={
+                    "amount": amount_str,
+                    "category": category,
+                    "date": date_str,
+                    "description": description
+                }
+            )
+
+        desc_val = description if description else None
+
+        try:
+            update_expense(id, user_id, amount, category, date_str, desc_val)
+            return redirect(url_for("profile"))
+        except Exception as e:
+            return render_template(
+                "edit_expense.html",
+                expense=expense,
+                categories=categories,
+                error="An unexpected error occurred while updating the expense.",
+                form_data={
+                    "amount": amount_str,
+                    "category": category,
+                    "date": date_str,
+                    "description": description
+                }
+            )
+
+    return render_template(
+        "edit_expense.html",
+        expense=expense,
+        categories=categories
+    )
 
 
-@app.route("/expenses/<int:id>/delete")
-def delete_expense(id):
-    return "Delete expense — coming in Step 9"
+@app.route("/expenses/<int:id>/delete", methods=["POST"])
+def delete_expense_route(id):
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+    expense = get_expense_by_id(id, user_id)
+    if not expense:
+        abort(404)
+
+    delete_expense(id, user_id)
+    return redirect(url_for("profile"))
 
 
 if __name__ == "__main__":
