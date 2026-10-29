@@ -4,6 +4,7 @@ services:
     env: python
     region: ohio
     plan: free
+    rootDir: .
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
@@ -11,4 +12,3 @@ services:
         value: 3.12.3
       - key: SECRET_KEY
         generateValue: true
-rootDirectory: .
