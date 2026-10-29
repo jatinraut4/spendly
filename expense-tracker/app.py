@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash, abort
 from database.db import init_db, seed_db, create_user, verify_user, get_user_by_id
 from database.queries import (
@@ -15,7 +16,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 app = Flask(__name__)
-app.secret_key = "dev-secret-key-change-in-production"
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 
 
 # ------------------------------------------------------------------ #
@@ -490,4 +491,5 @@ if __name__ == "__main__":
     with app.app_context():
         init_db()
         seed_db()
-    app.run(debug=True, port=5001)
+    port = int(os.environ.get("PORT", 5001))
+    app.run(debug=False, host="0.0.0.0", port=port)
