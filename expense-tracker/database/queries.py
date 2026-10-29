@@ -21,6 +21,42 @@ def insert_expense(user_id, amount, category, date, description):
         conn.commit()
 
 
+def delete_expense(expense_id, user_id):
+    """
+    Delete an expense by ID, scoped to user_id for ownership safety.
+    """
+    with get_db() as conn:
+        conn.execute(
+            "DELETE FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id)
+        )
+        conn.commit()
+
+
+def update_expense(expense_id, user_id, amount, category, date, description):
+    """
+    Update an existing expense row, scoped to id and user_id for ownership safety.
+    """
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? WHERE id = ? AND user_id = ?",
+            (amount, category, date, description, expense_id, user_id)
+        )
+        conn.commit()
+
+
+def get_expense_by_id(expense_id, user_id):
+    """
+    Fetch a single expense row only if it belongs to the given user; returns None otherwise.
+    """
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, user_id, amount, category, date, description FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id)
+        ).fetchone()
+        return dict(row) if row else None
+
+
 def format_amount(amount):
     """
     Format a numeric amount as a string with commas.
@@ -164,12 +200,13 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
         params.append(limit)
 
         rows = conn.execute(
-            "SELECT date, description, category, amount FROM expenses " + where_clause + " ORDER BY date DESC LIMIT ?",
+            "SELECT id, date, description, category, amount FROM expenses " + where_clause + " ORDER BY date DESC LIMIT ?",
             params
         ).fetchall()
 
         return [
             {
+                "id": row["id"],
                 "date": row["date"],
                 "description": row["description"],
                 "category": row["category"],
